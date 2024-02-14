@@ -96,21 +96,32 @@ check_options() {
 	[[ -z $WWW_DOMAIN ]] && WWW_DOMAIN="www.$NAKED_DOMAIN"
 }
 
+# start a python server for acme challenge
+start_server() {
+    # needs sudo for privileged port below 1024
+    python3 server.py &
+    SERVER_PID=$!
+}
+
 gen_cert() {
-	certbot certonly -v \
+	sudo certbot certonly -v \
+		--standalone \
+        --config-dir ./config \
         --logs-dir ./logs \
+        --work-dir ./work \
 		--expand \
 		--server $ACME_URI \
 		--agree-tos \
 		--email $EMAIL \
-		-w $WEBROOT \
 		-d $NAKED_DOMAIN \
 		-d $WWW_DOMAIN
 }
 
 main() {
 	check_options
+    start_server
 	gen_cert
+    kill $SERVER_PID
 }
 main "$@"
 
